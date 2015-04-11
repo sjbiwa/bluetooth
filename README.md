@@ -1,1 +1,2 @@
-bluetooth LE(low energy)‚ğ“®‚©‚»‚¤!!
+bluetooth LE(low energy)ã‚’å‹•ã‹ãã†!!
+
