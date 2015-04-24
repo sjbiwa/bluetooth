@@ -85,11 +85,11 @@ INC_PATHS += -I..
 CFLAGS  = -DSOFTDEVICE_PRESENT
 CFLAGS += -DNRF51
 CFLAGS += -DS110
-CFLAGS += -DBOARD_PCA10028
+CFLAGS += -DBOARD_CUSTOM
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -mcpu=cortex-m0
 CFLAGS += -mthumb -mabi=aapcs --std=gnu99
-CFLAGS += -Wall -Werror -O0 -g
+CFLAGS += -Wall -O0 -g
 CFLAGS += -mfloat-abi=soft
 # keep every function in separate section. This will allow linker to dump unused functions
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
@@ -109,7 +109,7 @@ ASMFLAGS += -x assembler-with-cpp -g
 ASMFLAGS += -DSOFTDEVICE_PRESENT
 ASMFLAGS += -DNRF51
 ASMFLAGS += -DS110
-ASMFLAGS += -DBOARD_PCA10028
+ASMFLAGS += -DBOARD_CUSTOM
 ASMFLAGS += -DBLE_STACK_SUPPORT_REQD
 
 C_SOURCE_FILE_NAMES = $(notdir $(C_SOURCE_FILES))
@@ -127,7 +127,7 @@ OBJECTS = $(C_OBJECTS) $(ASM_OBJECTS)
 
 
 #building all targets
-all: $(TARGET_BIN)
+all: $(TARGET_BIN) $(TARGET_HEX)
 
 # Create objects from C SRC files
 .c.o:
@@ -152,10 +152,11 @@ $(TARGET_HEX): $(TARGET_ELF)
 	$(OBJCOPY) -O ihex $< $@
 
 clean:
-	$(RM) $(OBJECTS)
-	$(RM) $(TARGET_ELF)
-	$(RM) $(TARGET_HEX)
-	$(RM) $(TARGET_BIN)
+	$(RM) -f $(OBJECTS)
+	$(RM) -f $(TARGET_ELF)
+	$(RM) -f $(TARGET_HEX)
+	$(RM) -f $(TARGET_BIN)
+	$(RM) -f $(TARGET).map
 
 flash: $(MAKECMDGOALS)
 	nrfjprog --reset --program $(TARGET_HEX)
