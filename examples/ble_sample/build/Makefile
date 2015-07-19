@@ -10,11 +10,20 @@ TARGET_HEX := $(TARGET).hex
 TARGET_BIN := $(TARGET).bin
 
 
-GNU_INSTALL_ROOT := /usr/local/linaro
+GNU_INSTALL_ROOT := /usr/local/linaro32n
 NRK51_SDK_ROOT   := ../../../../nRF51_SDK_8.0.0_5fc2c3a
+#NRK51_SDK_ROOT   := ../../../../nRF51_SDK_9.0.0_2e23562
 BSP_ROOT		 := $(NRK51_SDK_ROOT)/examples/bsp
 
 TEMPLATE_PATH	 := $(NRK51_SDK_ROOT)/components/toolchain/gcc
+
+OS_ROOT			 := ../../../../../bwos
+OS_KERN_SRC	 	 := $(OS_ROOT)/kernel
+OS_KERN_INC	 	 := $(OS_ROOT)/include
+OS_BSP_SRC		 := $(OS_ROOT)/arch/arm_cm
+OS_BSP_INC		 := $(OS_BSP_SRC)
+OS_BOARD_SRC	 := $(OS_ROOT)/arch/arm_cm/board/nrf51822
+OS_BOARD_INC	 := $(OS_BOARD_SRC)
 
 export OUTPUT_FILENAME
 MAKEFILE_NAME := $(MAKEFILE_LIST)
@@ -44,8 +53,6 @@ C_SOURCE_FILES += \
 			$(NRK51_SDK_ROOT)/components/libraries/fifo/app_fifo.c \
 			$(NRK51_SDK_ROOT)/components/libraries/gpiote/app_gpiote.c \
 			$(NRK51_SDK_ROOT)/components/libraries/timer/app_timer.c \
-			$(NRK51_SDK_ROOT)/components/libraries/uart/retarget.c \
-			$(NRK51_SDK_ROOT)/components/drivers_nrf/uart/app_uart_fifo.c \
 			$(NRK51_SDK_ROOT)/components/drivers_nrf/hal/nrf_delay.c \
 			$(NRK51_SDK_ROOT)/components/ble/common/ble_advdata.c \
 			$(NRK51_SDK_ROOT)/components/ble/common/ble_conn_params.c \
@@ -54,10 +61,29 @@ C_SOURCE_FILES += \
 			$(NRK51_SDK_ROOT)/components/toolchain/system_nrf51.c \
 			$(NRK51_SDK_ROOT)/components/softdevice/common/softdevice_handler/softdevice_handler.c \
 			$(BSP_ROOT)/bsp.c \
-			../main.c \
+			../bl_main.c \
+			../application.c \
+			$(OS_KERN_SRC)/fixmb.c \
+			$(OS_KERN_SRC)/flag.c \
+			$(OS_KERN_SRC)/init_task.c \
+			$(OS_KERN_SRC)/malloc.c \
+			$(OS_KERN_SRC)/msgq.c \
+			$(OS_KERN_SRC)/mutex.c \
+			$(OS_KERN_SRC)/sem.c \
+			$(OS_KERN_SRC)/smp.c \
+			$(OS_KERN_SRC)/st_malloc.c \
+			$(OS_KERN_SRC)/startup.c \
+			$(OS_KERN_SRC)/task.c \
+			$(OS_KERN_SRC)/timer.c \
+			$(OS_BSP_SRC)/arch.c \
+			$(OS_BSP_SRC)/idle.c \
+			$(OS_BSP_SRC)/irq.c \
+			$(OS_BOARD_SRC)/boards.c \
+			../board_timer.c \
 
 #assembly files common to all targets
-ASM_SOURCE_FILES  = $(NRK51_SDK_ROOT)/components/toolchain/gcc/gcc_startup_nrf51.s
+ASM_SOURCE_FILES  += $(NRK51_SDK_ROOT)/components/toolchain/gcc/gcc_startup_nrf51.s
+ASM2_SOURCE_FILES  += $(OS_BSP_SRC)/dispatch.S ../handler.S
 
 #linker script
 LINKER_SCRIPT = ble_sample.ld
@@ -79,7 +105,9 @@ INC_PATHS += -I$(NRK51_SDK_ROOT)/components/softdevice/s110/headers
 INC_PATHS += -I$(NRK51_SDK_ROOT)/components/toolchain/gcc
 INC_PATHS += -I$(BSP_ROOT)
 INC_PATHS += -I..
-
+INC_PATHS += -I$(OS_KERN_INC)
+INC_PATHS += -I$(OS_BSP_INC)
+INC_PATHS += -I$(OS_BOARD_INC)
 
 #flags common to all targets
 CFLAGS  = -DSOFTDEVICE_PRESENT
@@ -94,6 +122,24 @@ CFLAGS += -mfloat-abi=soft
 # keep every function in separate section. This will allow linker to dump unused functions
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
 CFLAGS += -flto -fno-builtin
+
+CFLAGS += -DOS_VER="0.01"
+CFLAGS += -DTASK_MAX_NUM=4
+CFLAGS += -DFLAG_MAX_NUM=2
+CFLAGS += -DSEM_MAX_NUM=2
+CFLAGS += -DMUTEX_MAX_NUM=2
+CFLAGS += -DMSGQ_MAX_NUM=0
+CFLAGS += -DFIXMB_MAX_NUM=0
+CFLAGS += -DTIMER_MAX_NUM=0
+CFLAGS += -DUSE_SMP=0 -DCPU_NUM=1 -DNO_USE_SVC_CALL -DNO_USE_SVC_STACK -DMASTER_CPU_ID=0
+CFLAGS += -DCORE_M0
+CFLAGS += -DMAX_CLOCK_FREQ=16000000
+#CFLAGS += -DSVCALL_PRIORITY=0xff
+CFLAGS += -DPENDSV_PRIORITY=0xff
+CFLAGS += -DUSE_TICKLESS
+CFLAGS += -DMAIN_TASK_USR_STACK_SIZE=256
+CFLAGS += -DINITIAL_TASK_USR_STACK_SIZE=256
+
 
 # keep every function in separate section. This will allow linker to dump unused functions
 LDFLAGS += -Xlinker -Map=$(TARGET).map
@@ -120,10 +166,15 @@ ASM_SOURCE_FILE_NAMES = $(notdir $(ASM_SOURCE_FILES))
 ASM_PATHS			  = $(call remduplicates, $(dir $(ASM_SOURCE_FILES) ))
 ASM_OBJECTS			  = $(ASM_SOURCE_FILE_NAMES:.s=.o)
 
+ASM2_SOURCE_FILE_NAMES = $(notdir $(ASM2_SOURCE_FILES))
+ASM2_PATHS			  = $(call remduplicates, $(dir $(ASM2_SOURCE_FILES) ))
+ASM2_OBJECTS			  = $(ASM2_SOURCE_FILE_NAMES:.S=.o)
+
 vpath %.c $(C_PATHS)
 vpath %.s $(ASM_PATHS)
+vpath %.S $(ASM2_PATHS)
 
-OBJECTS = $(C_OBJECTS) $(ASM_OBJECTS)
+OBJECTS = $(C_OBJECTS) $(ASM_OBJECTS) $(ASM2_OBJECTS)
 
 
 #building all targets
@@ -137,6 +188,8 @@ all: $(TARGET_BIN) $(TARGET_HEX)
 .s.o:
 	$(CC) $(ASMFLAGS) $(INC_PATHS) -c $<
 
+.S.o:
+	$(CC) $(CFLAGS) $(INC_PATHS) -c $<
 
 # Link
 $(TARGET_ELF): $(OBJECTS)
