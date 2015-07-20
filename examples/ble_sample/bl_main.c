@@ -414,8 +414,7 @@ void bl_main(void)
     // Enter main loop.
     for (;;)
     {
-    	task_sleep();
-        //power_manage();
+        power_manage();
     }
 }
 

@@ -72,23 +72,21 @@ extern void		bl_main();
 void task1(uint32_t arg0, uint32_t arg1)
 {
 	bl_main();
-	for (;;) {
-		task_tsleep(SEC(5));
-		task_tsleep(SEC(5));
-	}
 }
 
+uint32_t idle_counter = 0;
 void task2(uint32_t arg0, uint32_t arg1)
 {
 	for (;;) {
 		task_tsleep(SEC(5));
 		task_tsleep(SEC(5));
+		idle_counter++;
 	}
 }
 
 TaskCreateInfo	task_info[] = {
-		{"TASK1", TASK_ACT, task1, 0, 512, 0, 5, (void*)128},
-		{"TASK2", TASK_ACT, task2, 0, 512, 0, 6, (void*)128},
+		{"TASK1", TASK_ACT, task1, 0, 512, 0, 31, (void*)128},
+		{"TASK2", TASK_ACT, task2, 0, 512, 0, 10, (void*)128},
 };
 
 void main_task(void)

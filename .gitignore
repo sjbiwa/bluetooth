@@ -4,3 +4,4 @@
 *.elf
 *.hex
 examples/ble_sample/build/mdk/
+examples/ble_sample/build/ExtDll.iex

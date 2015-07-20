@@ -117,7 +117,7 @@ CFLAGS += -DBOARD_CUSTOM
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -mcpu=cortex-m0
 CFLAGS += -mthumb -mabi=aapcs --std=gnu99
-CFLAGS += -Wall -O0 -g
+CFLAGS += -Wall -Os -g
 CFLAGS += -mfloat-abi=soft
 # keep every function in separate section. This will allow linker to dump unused functions
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
