@@ -20,8 +20,8 @@
 
 #define DEVICE_NAME                     "BLE_SAMPLE(with BWOS)"                        /**< Name of device. Will be included in the advertising data. */
 
-#define APP_ADV_INTERVAL                64                                          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
-#define APP_ADV_TIMEOUT_IN_SECONDS      180                                         /**< The advertising timeout (in units of seconds). */
+#define APP_ADV_INTERVAL                1600                                      /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
+#define APP_ADV_TIMEOUT_IN_SECONDS      180                                      /**< The advertising timeout (in units of seconds). */
 
 #define APP_TIMER_PRESCALER             0                                           /**< Value of the RTC1 PRESCALER register. */
 #define APP_TIMER_MAX_TIMERS            (2 + 2)                 /**< Maximum number of simultaneously created timers. */
@@ -322,8 +322,9 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
                 err_code = bsp_buttons_enable(1 << WAKEUP_BUTTON_ID);
                 APP_ERROR_CHECK(err_code);
                 // Go to system-off mode (this function will not return; wakeup will cause a reset).
-                err_code = sd_power_system_off();
-                APP_ERROR_CHECK(err_code);
+                sd_nvic_SystemReset();
+                //err_code = sd_power_system_off();
+                //APP_ERROR_CHECK(err_code);
             }
             break;
 
@@ -411,11 +412,14 @@ void bl_main(void)
 
     advertising_start();
 
+    return;
+#if 0
     // Enter main loop.
     for (;;)
     {
         power_manage();
     }
+#endif
 }
 
 

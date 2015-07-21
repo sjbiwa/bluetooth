@@ -63,6 +63,8 @@ C_SOURCE_FILES += \
 			$(BSP_ROOT)/bsp.c \
 			../bl_main.c \
 			../application.c \
+			../board_timer.c \
+			../idle.c \
 			$(OS_KERN_SRC)/fixmb.c \
 			$(OS_KERN_SRC)/flag.c \
 			$(OS_KERN_SRC)/init_task.c \
@@ -76,10 +78,8 @@ C_SOURCE_FILES += \
 			$(OS_KERN_SRC)/task.c \
 			$(OS_KERN_SRC)/timer.c \
 			$(OS_BSP_SRC)/arch.c \
-			$(OS_BSP_SRC)/idle.c \
 			$(OS_BSP_SRC)/irq.c \
 			$(OS_BOARD_SRC)/boards.c \
-			../board_timer.c \
 
 #assembly files common to all targets
 ASM_SOURCE_FILES  += $(NRK51_SDK_ROOT)/components/toolchain/gcc/gcc_startup_nrf51.s

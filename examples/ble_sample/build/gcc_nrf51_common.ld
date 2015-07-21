@@ -153,8 +153,8 @@ SECTIONS
 	__heap_start = .;
 
 	__StackTop = ORIGIN(RAM) + LENGTH(RAM);
-	stack_idle = __StackTop - 512;
-	__heap_end = stack_idle - 256;
+	stack_idle = __StackTop - 2048;
+	__heap_end = stack_idle - 128;
 	PROVIDE(__stack = __StackTop);
 
 }
