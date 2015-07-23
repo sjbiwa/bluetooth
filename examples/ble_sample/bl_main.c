@@ -55,6 +55,8 @@ static ble_nus_t                        m_nus;                                  
 static uint16_t                         m_conn_handle = BLE_CONN_HANDLE_INVALID;    /**< Handle of the current connection. */
 
 
+static int	timeout_flag;
+
 /**@brief Function for assert macro callback.
  *
  * @details     This function will be called in case of an assert in the SoftDevice.
@@ -142,6 +144,7 @@ static void advertising_init(void)
 /**@snippet [Handling the data received over BLE] */
 static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t length)
 {
+	notify_uart(p_data, length);
 }
 /**@snippet [Handling the data received over BLE] */
 
@@ -322,7 +325,8 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
                 err_code = bsp_buttons_enable(1 << WAKEUP_BUTTON_ID);
                 APP_ERROR_CHECK(err_code);
                 // Go to system-off mode (this function will not return; wakeup will cause a reset).
-                sd_nvic_SystemReset();
+                flag_set(timeout_flag, 0x0001);
+                //sd_nvic_SystemReset();
                 //err_code = sd_power_system_off();
                 //APP_ERROR_CHECK(err_code);
             }
@@ -410,7 +414,14 @@ void bl_main(void)
 
     //printf("%s",start_string);
 
-    advertising_start();
+    timeout_flag = flag_create();
+    flag_set(timeout_flag, 0x0001);
+    for (;;) {
+    	uint32_t ret_pattern;
+    	flag_wait(timeout_flag, 0x0001, FLAG_OR|FLAG_CLR, &ret_pattern);
+    	advertising_start();
+    }
+
 
     return;
 #if 0

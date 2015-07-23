@@ -116,7 +116,7 @@ CFLAGS += -DS110
 CFLAGS += -DBOARD_CUSTOM
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -mcpu=cortex-m0
-CFLAGS += -mthumb -mabi=aapcs --std=gnu99
+CFLAGS += -mthumb -mabi=aapcs --std=gnu99 -mno-unaligned-access
 CFLAGS += -Wall -Os -g
 CFLAGS += -mfloat-abi=soft
 # keep every function in separate section. This will allow linker to dump unused functions
@@ -128,7 +128,7 @@ CFLAGS += -DTASK_MAX_NUM=4
 CFLAGS += -DFLAG_MAX_NUM=2
 CFLAGS += -DSEM_MAX_NUM=2
 CFLAGS += -DMUTEX_MAX_NUM=2
-CFLAGS += -DMSGQ_MAX_NUM=0
+CFLAGS += -DMSGQ_MAX_NUM=2
 CFLAGS += -DFIXMB_MAX_NUM=0
 CFLAGS += -DTIMER_MAX_NUM=0
 CFLAGS += -DUSE_SMP=0 -DCPU_NUM=1 -DNO_USE_SVC_CALL -DNO_USE_SVC_STACK -DMASTER_CPU_ID=0

@@ -14,7 +14,7 @@
 	.globl	main
 	.type   main, %function
 main:
-	ldr		r0, =stack_idle
+	ldr		r0, =stack_startup
 	msr		PSP, r0
 	movs	r0, #0x02
 	msr		CONTROL, r0

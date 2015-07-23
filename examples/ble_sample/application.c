@@ -29,12 +29,20 @@
 
 static void set_gpio(void)
 {
-    //P0.21にLED接続。
     //HIGHで消灯。LOWで点灯。
+    nrf_gpio_cfg_output(13);
+    nrf_gpio_cfg_output(15);
+    nrf_gpio_cfg_output(16);
+    nrf_gpio_cfg_output(19);
     nrf_gpio_cfg_output(21);
+
+    nrf_gpio_pin_write(13, 1);
+    nrf_gpio_pin_write(15, 1);
+    nrf_gpio_pin_write(16, 1);
+    nrf_gpio_pin_write(19, 1);
     nrf_gpio_pin_write(21, 1);
     //P0.08 : /RFDET
-    nrf_gpio_cfg_input(8, NRF_GPIO_PIN_PULLUP);
+    //nrf_gpio_cfg_input(8, NRF_GPIO_PIN_PULLUP);
 }
 
 
@@ -49,14 +57,32 @@ void task1(uint32_t arg0, uint32_t arg1)
 	task_sleep();
 }
 
+static int sem_uart_event = -1;
+static int msgq_id = -1;
+
 void task2(uint32_t arg0, uint32_t arg1)
 {
     set_gpio();
+    msgq_id = msgq_create(64);
     for (;;) {
-        nrf_gpio_pin_write(21, 1);
-		task_tsleep(MSEC(200));
-        nrf_gpio_pin_write(21, 0);
-		task_tsleep(MSEC(200));
+    	uint8_t value;
+    	if ( msgq_recv(msgq_id, &value, 1) == RT_OK ) {
+            nrf_gpio_pin_write(13, (value & (0x01<<4))?1:0);
+            nrf_gpio_pin_write(15, (value & (0x01<<3))?1:0);
+            nrf_gpio_pin_write(16, (value & (0x01<<2))?1:0);
+            nrf_gpio_pin_write(19, (value & (0x01<<1))?1:0);
+            nrf_gpio_pin_write(21, (value & (0x01<<0))?1:0);
+            task_tsleep(MSEC(50));
+    	}
+	}
+}
+
+void notify_uart(const uint8_t* buff, uint32_t length)
+{
+	if ( 0 <= msgq_id ) {
+		for ( ; 0 < length; length--, buff++ ) {
+	    	msgq_send(msgq_id, buff, 1);
+		}
 	}
 }
 
