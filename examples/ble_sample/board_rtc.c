@@ -9,7 +9,7 @@
 #include "cmsis.h"
 
 #define	NO_TMOUT_COUNT		(0xFFFFFFFFFFFFFFFFLL)
-#define	NORMAL_TMOUT_COUNT	(10000000)
+#define	NORMAL_TMOUT_COUNT	(327680)
 
 /* Tick処理 */
 static TimeSpec		tick_count;		/* Tick Counter */
@@ -22,8 +22,7 @@ void timer_handler(void)
 /* tick_countを最新に更新 */
 static inline void update_tick_count(void)
 {
-	NRF_TIMER0->TASKS_CAPTURE[1] = 1;
-	tick_count += NRF_TIMER0->CC[1];
+	tick_count += NRF_RTC1->COUNTER;
 }
 
 static void update_timer(TimeSpec tm_diff)
@@ -31,17 +30,18 @@ static void update_timer(TimeSpec tm_diff)
 	if ( NORMAL_TMOUT_COUNT < tm_diff ) {
 		tm_diff = NORMAL_TMOUT_COUNT;
 	}
-	NRF_TIMER0->CC[0] = tm_diff;
-	NRF_TIMER0->TASKS_CLEAR = 1;
+	NRF_RTC1->CC[0] = tm_diff;
+	NRF_RTC1->TASKS_CLEAR = 1;
+
+
 }
 
-void TIMER0_IRQHandler(void)
+void RTC1_IRQHandler(void)
 {
 	uint32_t irq_state = irq_save();
-	NRF_TIMER0->EVENTS_COMPARE[0] = 0;  /* 割り込み要求ビットクリア */
-
+	NRF_RTC1->EVENTS_COMPARE[0] = 0;  /* 割り込み要求ビットクリア */
+	/* TICK値更新 */
 	update_tick_count();
-
 	if ( tmout_count <= tick_count ) {
 		TimeSpec tm_diff = tick_count - tmout_count;
 		update_timer(tm_diff);
@@ -57,6 +57,7 @@ void TIMER0_IRQHandler(void)
 
 		irq_restore(irq_state);
 	}
+
 }
 
 /* TICKカウンタの取得 */
@@ -64,8 +65,7 @@ TimeSpec get_tick_count(void)
 {
 	TimeSpec ret;
 	uint32_t irq_state = irq_save();
-	NRF_TIMER0->TASKS_CAPTURE[1] = 1;
-	ret = tick_count + NRF_TIMER0->CC[1];
+	ret = tick_count + NRF_RTC1->COUNTER;
 	irq_restore(irq_state);
 	return ret;
 }
@@ -76,13 +76,11 @@ void update_first_timeout(TimeSpec tmout)
 	TimeSpec ret;
 	uint32_t irq_state = irq_save();
 	tmout_count = tmout;
-
-	/* tick_countを最新に更新 */
+	/* TICK値更新 */
 	update_tick_count();
-
 	if ( tmout_count <= tick_count ) {
 		/* すでに過ぎているのでTIMER割り込みONする */
-		NVIC->ISPR[TIMER0_IRQn/32] = 0x1u << (TIMER0_IRQn % 32);
+		NVIC->ISPR[RTC1_IRQn/32] = 0x1u << (RTC1_IRQn % 32);
 	}
 	else {
 		TimeSpec tm_diff = tmout_count - tick_count;
@@ -94,23 +92,22 @@ void update_first_timeout(TimeSpec tmout)
 void
 arch_timer_init(uint32_t cpuid)
 {
-	__irq_set_enable(TIMER0_IRQn, IRQ_DISABLE, 0);
+	__irq_set_enable(RTC1_IRQn, IRQ_DISABLE, 0);
 
-	NRF_TIMER0->TASKS_STOP = 1;
-	/* LFCLK start */
+	/* Enable LFCLK */
 	NRF_CLOCK->TASKS_LFCLKSTART = 1;
 
-	/* PRESCALE設定 */
-	NRF_TIMER0->PRESCALER = 4;
-	NRF_TIMER0->MODE = 0;
-	NRF_TIMER0->BITMODE = 3;
-	NRF_TIMER0->INTENSET = 0x1u<<16;
-	NRF_TIMER0->TASKS_START = 1;
+	/* PRESCALE設定 (約1ms毎にカウントアップ) */
+	NRF_RTC1->PRESCALER = 0;
+
+	NRF_RTC1->INTENSET = 0x1u<<16;
+	NRF_RTC1->TASKS_START = 1;
 
 	/* 標準タイムアウト値をMATCHレジスタに設定 */
 	update_timer(NO_TMOUT_COUNT);
 
 	tmout_count = NO_TMOUT_COUNT;
 
-	__irq_set_enable(TIMER0_IRQn, IRQ_ENABLE, 0);
+	__irq_set_enable(RTC1_IRQn, IRQ_ENABLE, 0);
+
 }

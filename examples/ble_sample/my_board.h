@@ -26,10 +26,17 @@ extern char					__heap_end;
 typedef	uint64_t			TimeSpec;	/* OS内部での時間単位 */
 typedef	uint32_t			TimeOut;	/* APIで指定するタイムアウト単位 */
 
-/* TIME_UNIT値に追従すること */
-#define	SEC(n)		((n)*1000000)
-#define	MSEC(n)		((n)*1000)
-#define	USEC(n)		((n))
+/* TIME_UNIT値に追従すること (30.517us) */
+#if 1
+#define	SEC(n)		((n)*32768)
+#define	MSEC(n)		(((n)*1000)/30)
+#define	USEC(n)		(((n)*1000)/30517)
 #define	NSEC(n)		(1)
+#else
+#define	SEC(n)		((n)*1000000)
+#define	MSEC(n)		((n)*1000))
+#define	USEC(n)		(n)
+#define	NSEC(n)		(1)
+#endif
 
 #endif /* MY_BOARD_H_ */

@@ -5,27 +5,20 @@
 #include "nrf51_bitfields.h"
 #include "ble_hci.h"
 #include "ble_advdata.h"
-#include "ble_conn_params.h"
 #include "softdevice_handler.h"
-#include "app_timer.h"
-#include "app_gpiote.h"
+//#include "app_gpiote.h"
 #include "ble_nus.h"
 #include "app_util_platform.h"
-#include "bsp.h"
 #include "bwos.h"
 
 #define IS_SRVC_CHANGED_CHARACT_PRESENT 0                                           /**< Include the service_changed characteristic. If not enabled, the server's database cannot be changed for the lifetime of the device. */
 
 #define WAKEUP_BUTTON_ID                0                                           /**< Button used to wake up the application. */
 
-#define DEVICE_NAME                     "BLE_SAMPLE(with BWOS)"                        /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                     "Versa Writer(with RTOS)"                        /**< Name of device. Will be included in the advertising data. */
 
 #define APP_ADV_INTERVAL                1600                                      /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS      180                                      /**< The advertising timeout (in units of seconds). */
-
-#define APP_TIMER_PRESCALER             0                                           /**< Value of the RTC1 PRESCALER register. */
-#define APP_TIMER_MAX_TIMERS            (2 + 2)                 /**< Maximum number of simultaneously created timers. */
-#define APP_TIMER_OP_QUEUE_SIZE         4                                           /**< Size of timer operation queues. */
 
 #define APP_GPIOTE_MAX_USERS            1                                           /**< Maximum number of simultaneously GPIOTE users. */
 
@@ -33,11 +26,7 @@
 #define MAX_CONN_INTERVAL               MSEC_TO_UNITS(75, UNIT_1_25_MS)             /**< Maximum acceptable connection interval (75 ms), Connection interval uses 1.25 ms units. */
 #define SLAVE_LATENCY                   0                                           /**< Slave latency. */
 #define CONN_SUP_TIMEOUT                MSEC_TO_UNITS(4000, UNIT_10_MS)             /**< Connection supervisory timeout (4 seconds), Supervision Timeout uses 10 ms units. */
-#define FIRST_CONN_PARAMS_UPDATE_DELAY  APP_TIMER_TICKS(5000, APP_TIMER_PRESCALER)  /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
-#define NEXT_CONN_PARAMS_UPDATE_DELAY   APP_TIMER_TICKS(30000, APP_TIMER_PRESCALER) /**< Time between each call to sd_ble_gap_conn_param_update after the first call (30 seconds). */
-#define MAX_CONN_PARAMS_UPDATE_COUNT    3                                           /**< Number of attempts before giving up the connection parameter negotiation. */
 
-#define BUTTON_DETECTION_DELAY          APP_TIMER_TICKS(50, APP_TIMER_PRESCALER)    /**< Delay from a GPIOTE event until a button is reported as pushed (in number of timer ticks). */
 
 #define SEC_PARAM_BOND                  1                                           /**< Perform bonding. */
 #define SEC_PARAM_MITM                  0                                           /**< Man In The Middle protection not required. */
@@ -178,62 +167,6 @@ static void sec_params_init(void)
 }
 
 
-/**@brief       Function for handling an event from the Connection Parameters Module.
- *
- * @details     This function will be called for all events in the Connection Parameters Module
- *              which are passed to the application.
- *
- * @note        All this function does is to disconnect. This could have been done by simply setting
- *              the disconnect_on_fail config parameter, but instead we use the event handler
- *              mechanism to demonstrate its use.
- *
- * @param[in]   p_evt   Event received from the Connection Parameters Module.
- */
-static void on_conn_params_evt(ble_conn_params_evt_t * p_evt)
-{
-    uint32_t err_code;
-
-    if(p_evt->evt_type == BLE_CONN_PARAMS_EVT_FAILED)
-    {
-        err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_CONN_INTERVAL_UNACCEPTABLE);
-        APP_ERROR_CHECK(err_code);
-    }
-}
-
-
-/**@brief       Function for handling errors from the Connection Parameters module.
- *
- * @param[in]   nrf_error   Error code containing information about what went wrong.
- */
-static void conn_params_error_handler(uint32_t nrf_error)
-{
-    APP_ERROR_HANDLER(nrf_error);
-}
-
-
-/**@brief Function for initializing the Connection Parameters module.
- */
-static void conn_params_init(void)
-{
-    uint32_t               err_code;
-    ble_conn_params_init_t cp_init;
-
-    memset(&cp_init, 0, sizeof(cp_init));
-
-    cp_init.p_conn_params                  = NULL;
-    cp_init.first_conn_params_update_delay = FIRST_CONN_PARAMS_UPDATE_DELAY;
-    cp_init.next_conn_params_update_delay  = NEXT_CONN_PARAMS_UPDATE_DELAY;
-    cp_init.max_conn_params_update_count   = MAX_CONN_PARAMS_UPDATE_COUNT;
-    cp_init.start_on_notify_cccd_handle    = BLE_GATT_HANDLE_INVALID;
-    cp_init.disconnect_on_fail             = false;
-    cp_init.evt_handler                    = on_conn_params_evt;
-    cp_init.error_handler                  = conn_params_error_handler;
-
-    err_code = ble_conn_params_init(&cp_init);
-    APP_ERROR_CHECK(err_code);
-}
-
-
 /**@brief Function for starting advertising.
  */
 static void advertising_start(void)
@@ -252,9 +185,6 @@ static void advertising_start(void)
 
     err_code = sd_ble_gap_adv_start(&adv_params);
     APP_ERROR_CHECK(err_code);
-
-    err_code = bsp_indication_set(BSP_INDICATE_ADVERTISING);
-    APP_ERROR_CHECK(err_code);
 }
 
 
@@ -271,16 +201,12 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
     switch (p_ble_evt->header.evt_id)
     {
         case BLE_GAP_EVT_CONNECTED:
-            err_code = bsp_indication_set(BSP_INDICATE_CONNECTED);
-            APP_ERROR_CHECK(err_code);
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
             break;
 
         case BLE_GAP_EVT_DISCONNECTED:
-            err_code = bsp_indication_set(BSP_INDICATE_IDLE);
-            APP_ERROR_CHECK(err_code);
             m_conn_handle = BLE_CONN_HANDLE_INVALID;
-            advertising_start();
+            flag_set(timeout_flag, 0x0001);
             break;
 
         case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
@@ -319,16 +245,7 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
         case BLE_GAP_EVT_TIMEOUT:
             if (p_ble_evt->evt.gap_evt.params.timeout.src == BLE_GAP_TIMEOUT_SRC_ADVERTISING)
             {
-                err_code = bsp_indication_set(BSP_INDICATE_IDLE);
-                APP_ERROR_CHECK(err_code);
-                // Configure buttons with sense level low as wakeup source.
-                err_code = bsp_buttons_enable(1 << WAKEUP_BUTTON_ID);
-                APP_ERROR_CHECK(err_code);
-                // Go to system-off mode (this function will not return; wakeup will cause a reset).
                 flag_set(timeout_flag, 0x0001);
-                //sd_nvic_SystemReset();
-                //err_code = sd_power_system_off();
-                //APP_ERROR_CHECK(err_code);
             }
             break;
 
@@ -349,7 +266,6 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
  */
 static void ble_evt_dispatch(ble_evt_t * p_ble_evt)
 {
-    ble_conn_params_on_ble_evt(p_ble_evt);
     ble_nus_on_ble_evt(&m_nus, p_ble_evt);
     on_ble_evt(p_ble_evt);
 }
@@ -397,23 +313,15 @@ void bl_main(void)
     uint32_t err_code;
 
     // Initialize.
-    APP_TIMER_INIT(APP_TIMER_PRESCALER, APP_TIMER_MAX_TIMERS, APP_TIMER_OP_QUEUE_SIZE, false);
-    APP_GPIOTE_INIT(APP_GPIOTE_MAX_USERS);
+    //APP_GPIOTE_INIT(APP_GPIOTE_MAX_USERS);
     ble_stack_init();
-    err_code = bsp_init(BSP_INIT_LED | BSP_INIT_BUTTONS,
-                        APP_TIMER_TICKS(100, APP_TIMER_PRESCALER),
-                        NULL);
-    APP_ERROR_CHECK(err_code);
-    err_code = bsp_buttons_enable(1 << WAKEUP_BUTTON_ID);
-    APP_ERROR_CHECK(err_code);
     gap_params_init();
     services_init();
     advertising_init();
-    conn_params_init();
     sec_params_init();
-
     //printf("%s",start_string);
 
+#if 1
     timeout_flag = flag_create();
     flag_set(timeout_flag, 0x0001);
     for (;;) {
@@ -422,10 +330,9 @@ void bl_main(void)
     	advertising_start();
     }
 
-
-    return;
-#if 0
+#else
     // Enter main loop.
+	advertising_start();
     for (;;)
     {
         power_manage();
@@ -440,11 +347,6 @@ void tprintf()
 
 void lprintf_init()
 {
-}
-
-void TIMER2_IRQHandler()
-{
-	_timer2_entry();
 }
 
 /**

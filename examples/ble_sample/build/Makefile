@@ -13,7 +13,6 @@ TARGET_BIN := $(TARGET).bin
 GNU_INSTALL_ROOT := /usr/local/linaro32n
 NRK51_SDK_ROOT   := ../../../../nRF51_SDK_8.0.0_5fc2c3a
 #NRK51_SDK_ROOT   := ../../../../nRF51_SDK_9.0.0_2e23562
-BSP_ROOT		 := $(NRK51_SDK_ROOT)/examples/bsp
 
 TEMPLATE_PATH	 := $(NRK51_SDK_ROOT)/components/toolchain/gcc
 
@@ -46,24 +45,20 @@ SIZE    		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-size"
 #function for removing duplicates in a list
 remduplicates = $(strip $(if $1,$(firstword $1) $(call remduplicates,$(filter-out $(firstword $1),$1))))
 
+#			$(NRK51_SDK_ROOT)/components/libraries/gpiote/app_gpiote.c \
 #source common to all targets
 C_SOURCE_FILES += \
-			$(NRK51_SDK_ROOT)/components/libraries/button/app_button.c \
 			$(NRK51_SDK_ROOT)/components/libraries/util/app_error.c \
 			$(NRK51_SDK_ROOT)/components/libraries/fifo/app_fifo.c \
-			$(NRK51_SDK_ROOT)/components/libraries/gpiote/app_gpiote.c \
-			$(NRK51_SDK_ROOT)/components/libraries/timer/app_timer.c \
 			$(NRK51_SDK_ROOT)/components/drivers_nrf/hal/nrf_delay.c \
 			$(NRK51_SDK_ROOT)/components/ble/common/ble_advdata.c \
-			$(NRK51_SDK_ROOT)/components/ble/common/ble_conn_params.c \
 			$(NRK51_SDK_ROOT)/components/ble/ble_services/ble_nus/ble_nus.c \
 			$(NRK51_SDK_ROOT)/components/ble/common/ble_srv_common.c \
 			$(NRK51_SDK_ROOT)/components/toolchain/system_nrf51.c \
 			$(NRK51_SDK_ROOT)/components/softdevice/common/softdevice_handler/softdevice_handler.c \
-			$(BSP_ROOT)/bsp.c \
 			../bl_main.c \
 			../application.c \
-			../board_timer.c \
+			../board_rtc.c \
 			../idle.c \
 			$(OS_KERN_SRC)/fixmb.c \
 			$(OS_KERN_SRC)/flag.c \
@@ -88,22 +83,19 @@ ASM2_SOURCE_FILES  += $(OS_BSP_SRC)/dispatch.S ../handler.S
 #linker script
 LINKER_SCRIPT = ble_sample.ld
 
+#INC_PATHS += -I$(NRK51_SDK_ROOT)/components/libraries/gpiote
 #includes common to all targets
 INC_PATHS  = -I$(NRK51_SDK_ROOT)/components/softdevice/common/softdevice_handler
 INC_PATHS += -I$(NRK51_SDK_ROOT)/components/toolchain
 INC_PATHS += -I$(NRK51_SDK_ROOT)/components/device
 INC_PATHS += -I$(NRK51_SDK_ROOT)/components/drivers_nrf/hal
-INC_PATHS += -I$(NRK51_SDK_ROOT)/components/libraries/button
-INC_PATHS += -I$(NRK51_SDK_ROOT)/components/libraries/gpiote
 INC_PATHS += -I$(NRK51_SDK_ROOT)/components/libraries/util
 INC_PATHS += -I$(NRK51_SDK_ROOT)/components/drivers_nrf/uart
 INC_PATHS += -I$(NRK51_SDK_ROOT)/components/ble/common
-INC_PATHS += -I$(NRK51_SDK_ROOT)/components/libraries/timer
 INC_PATHS += -I$(NRK51_SDK_ROOT)/components/ble/ble_services/ble_nus
 INC_PATHS += -I$(NRK51_SDK_ROOT)/components/libraries/fifo
 INC_PATHS += -I$(NRK51_SDK_ROOT)/components/softdevice/s110/headers
 INC_PATHS += -I$(NRK51_SDK_ROOT)/components/toolchain/gcc
-INC_PATHS += -I$(BSP_ROOT)
 INC_PATHS += -I..
 INC_PATHS += -I$(OS_KERN_INC)
 INC_PATHS += -I$(OS_BSP_INC)
