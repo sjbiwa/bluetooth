@@ -11,8 +11,8 @@ TARGET_BIN := $(TARGET).bin
 
 
 GNU_INSTALL_ROOT := /usr/local/linaro32n
-NRK51_SDK_ROOT   := ../../../../nRF51_SDK_8.0.0_5fc2c3a
-#NRK51_SDK_ROOT   := ../../../../nRF51_SDK_9.0.0_2e23562
+#NRK51_SDK_ROOT   := ../../../../nRF51_SDK_8.0.0_5fc2c3a
+NRK51_SDK_ROOT   := ../../../../nRF51_SDK_9.0.0_2e23562
 
 TEMPLATE_PATH	 := $(NRK51_SDK_ROOT)/components/toolchain/gcc
 
