@@ -342,9 +342,9 @@ void notify_uart(const uint8_t* buff, uint32_t length)
 }
 
 TaskCreateInfo	task_info[] = {
-		{"TASK1", TASK_ACT, task1, 0, 512, 0, 5, (void*)128},
-		{"TASK2", TASK_ACT, task2, 0, 512, 0, 6, (void*)128},
-		{"TASK3", TASK_ACT, task3, 0, 512, 0, 4, (void*)128},
+		{"TASK1", TASK_ACT, task1, 512, 0, 0, 5, (void*)128},
+		{"TASK2", TASK_ACT, task2, 512, 0, 0, 6, (void*)128},
+		{"TASK3", TASK_ACT, task3, 512, 0, 0, 4, (void*)128},
 };
 
 void main_task(void)

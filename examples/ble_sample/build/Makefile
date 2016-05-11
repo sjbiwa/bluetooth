@@ -10,14 +10,16 @@ TARGET_HEX := $(TARGET).hex
 TARGET_BIN := $(TARGET).bin
 
 
-GNU_INSTALL_ROOT := /usr/local/linaro32n
+GNU_INSTALL_ROOT := /usr/local/share/gcc4/arm-none-eabi
 #NRK51_SDK_ROOT   := ../../../../nRF51_SDK_8.0.0_5fc2c3a
 NRK51_SDK_ROOT   := ../../../../nRF51_SDK_9.0.0_2e23562
+#NRK51_SDK_ROOT   := ../../../../nRF5_SDK_11.0.0_89a8197
 
 TEMPLATE_PATH	 := $(NRK51_SDK_ROOT)/components/toolchain/gcc
 
 OS_ROOT			 := ../../../../../bwos
 OS_KERN_SRC	 	 := $(OS_ROOT)/kernel
+OS_UTIL_SRC		 := $(OS_ROOT)/util
 OS_KERN_INC	 	 := $(OS_ROOT)/include
 OS_BSP_SRC		 := $(OS_ROOT)/arch/arm_cm
 OS_BSP_INC		 := $(OS_BSP_SRC)
@@ -63,7 +65,7 @@ C_SOURCE_FILES += \
 			$(OS_KERN_SRC)/fixmb.c \
 			$(OS_KERN_SRC)/flag.c \
 			$(OS_KERN_SRC)/init_task.c \
-			$(OS_KERN_SRC)/malloc.c \
+			$(OS_KERN_SRC)/sys_malloc.c \
 			$(OS_KERN_SRC)/msgq.c \
 			$(OS_KERN_SRC)/mutex.c \
 			$(OS_KERN_SRC)/sem.c \
@@ -72,9 +74,11 @@ C_SOURCE_FILES += \
 			$(OS_KERN_SRC)/startup.c \
 			$(OS_KERN_SRC)/task.c \
 			$(OS_KERN_SRC)/timer.c \
+			$(OS_UTIL_SRC)/malloc.c \
 			$(OS_BSP_SRC)/arch.c \
 			$(OS_BSP_SRC)/irq.c \
 			$(OS_BOARD_SRC)/boards.c \
+			$(OS_BOARD_SRC)/debug_print.c \
 
 #assembly files common to all targets
 ASM_SOURCE_FILES  += $(NRK51_SDK_ROOT)/components/toolchain/gcc/gcc_startup_nrf51.s
@@ -129,7 +133,6 @@ CFLAGS += -DMAX_CLOCK_FREQ=16000000
 #CFLAGS += -DSVCALL_PRIORITY=0xff
 CFLAGS += -DPENDSV_PRIORITY=0xff
 CFLAGS += -DUSE_TICKLESS
-CFLAGS += -DMAIN_TASK_USR_STACK_SIZE=256
 CFLAGS += -DINITIAL_TASK_USR_STACK_SIZE=256
 
 

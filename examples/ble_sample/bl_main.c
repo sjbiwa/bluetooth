@@ -340,8 +340,7 @@ void bl_main(void)
 #endif
 }
 
-
-void tprintf()
+int tprintf(const char* fmt, ...)
 {
 }
 
