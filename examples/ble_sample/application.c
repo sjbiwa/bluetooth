@@ -283,13 +283,13 @@ static void led_output(uint32_t pattern)
 
 
 /* BLE実行用タスク */
-void task1(uint32_t arg0, uint32_t arg1)
+static void task1(uint32_t arg0, uint32_t arg1)
 {
 	bl_main();
 }
 
 /* BLEモジュールからの通知データを処理するタスク */
-void task2(uint32_t arg0, uint32_t arg1)
+static void task2(uint32_t arg0, uint32_t arg1)
 {
     for (;;) {
     	Message msg;
@@ -302,7 +302,7 @@ void task2(uint32_t arg0, uint32_t arg1)
 }
 
 /* LED表示用タスク */
-void task3(uint32_t arg0, uint32_t arg1)
+static void task3()
 {
 	gpio_init();
 	for (;;) {
@@ -344,9 +344,9 @@ void notify_uart(const uint8_t* buff, uint32_t length)
 TaskCreateInfo	task_info[] = {
 		{"TASK1", TASK_ACT, task1, 512, 0, 0, 5, (void*)128},
 		{"TASK2", TASK_ACT, task2, 512, 0, 0, 6, (void*)128},
-		{"TASK3", TASK_ACT, task3, 512, 0, 0, 4, (void*)128},
 };
 
+void* ptr;
 void main_task(void)
 {
 	int ix;
@@ -354,8 +354,9 @@ void main_task(void)
 		task_struct[ix] = task_create(&task_info[ix]);
 	}
 	mutex_request = mutex_create();
-    msgq_id = msgq_create(64);
-    sync_flag = flag_create();
+	msgq_id = msgq_create(64);
+	sync_flag = flag_create();
+	task3();
 	task_sleep();
 }
 
