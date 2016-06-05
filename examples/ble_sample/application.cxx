@@ -15,12 +15,13 @@
 /* configuration task */
 static int		task_struct[4];
 
+
 typedef	struct {
 	uint8_t		length;
 	uint8_t		buff[MAX_CHAR_LENGTH];
 } Message;
 
-extern void		bl_main();
+extern "C" void		bl_main();
 
 static int mutex_request = -1;
 static int msgq_id = -1;
@@ -30,7 +31,7 @@ static int sync_flag = -1;
 /***********************************
 * Font Data 0x20 to 0xDF 192
 ***********************************/
-const uint8_t Font[192][5] =
+static const uint8_t Font[192][5] =
 {
     { 0x00, 0x00, 0x00, 0x00, 0x00 }, // " " 0x20
     { 0x00, 0x00, 0x4f, 0x00, 0x00 }, // !   0x21
@@ -245,11 +246,7 @@ static const uint8_t pattern[8][8] = {
 
 /* 表示する文字列格納用 */
 static Message request_msg = {
-	.length = 4,
-	.buff[0] = 'A',
-	.buff[1] = 'B',
-	.buff[2] = 'C',
-	.buff[3] = 'D',
+		4, "ABCD"
 };
 
 /* LED点灯位置とGPIO番号対応表 */
@@ -283,13 +280,13 @@ static void led_output(uint32_t pattern)
 
 
 /* BLE実行用タスク */
-static void task1(uint32_t arg0, uint32_t arg1)
+static void task1(void* arg0, void* arg1)
 {
 	bl_main();
 }
 
 /* BLEモジュールからの通知データを処理するタスク */
-static void task2(uint32_t arg0, uint32_t arg1)
+static void task2(void* arg0, void* arg1)
 {
     for (;;) {
     	Message msg;
@@ -302,7 +299,7 @@ static void task2(uint32_t arg0, uint32_t arg1)
 }
 
 /* LED表示用タスク */
-static void task3()
+static void main_apps()
 {
 	gpio_init();
 	for (;;) {
@@ -328,7 +325,7 @@ static void task3()
 	}
 }
 
-void notify_uart(const uint8_t* buff, uint32_t length)
+extern "C" void notify_uart(const uint8_t* buff, uint32_t length)
 {
 	if ( 0 <= msgq_id ) {
 		Message msg;
@@ -342,8 +339,8 @@ void notify_uart(const uint8_t* buff, uint32_t length)
 }
 
 TaskCreateInfo	task_info[] = {
-		{"TASK1", TASK_ACT, task1, 512, 0, 0, 5, (void*)128},
-		{"TASK2", TASK_ACT, task2, 512, 0, 0, 6, (void*)128},
+		{"TASK1", TASK_ACT, task1, 512, 0, 5, (void*)128},
+		{"TASK2", TASK_ACT, task2, 512, 0, 6, (void*)128},
 };
 
 void* ptr;
@@ -356,12 +353,12 @@ void main_task(void)
 	mutex_request = mutex_create();
 	msgq_id = msgq_create(64);
 	sync_flag = flag_create();
-	task3();
+	main_apps();
 	task_sleep();
 }
 
 /* GPIOE割り込みハンドラ */
-void GPIOTE_IRQHandler(void)
+extern "C" void GPIOTE_IRQHandler(void)
 {
 	NRF_GPIOTE->EVENTS_IN[0] = 0;
     flag_set(sync_flag, 0x0001);

@@ -36,6 +36,7 @@ RM := rm -rf
 # Toolchain commands
 GNU_PREFIX		:= arm-none-eabi
 CC       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-gcc"
+CXX       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-g++"
 AS       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-as"
 AR       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-ar" -r
 LD       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-ld"
@@ -59,7 +60,6 @@ C_SOURCE_FILES += \
 			$(NRK51_SDK_ROOT)/components/toolchain/system_nrf51.c \
 			$(NRK51_SDK_ROOT)/components/softdevice/common/softdevice_handler/softdevice_handler.c \
 			../bl_main.c \
-			../application.c \
 			../board_rtc.c \
 			../idle.c \
 			$(OS_KERN_SRC)/fixmb.c \
@@ -79,6 +79,9 @@ C_SOURCE_FILES += \
 			$(OS_BSP_SRC)/irq.c \
 			$(OS_BOARD_SRC)/boards.c \
 			$(OS_BOARD_SRC)/debug_print.c \
+
+CXX_SOURCE_FILES += \
+			../application.cxx \
 
 #assembly files common to all targets
 ASM_SOURCE_FILES  += $(NRK51_SDK_ROOT)/components/toolchain/gcc/gcc_startup_nrf51.s
@@ -135,6 +138,7 @@ CFLAGS += -DPENDSV_PRIORITY=0xff
 CFLAGS += -DUSE_TICKLESS
 CFLAGS += -DINITIAL_TASK_USR_STACK_SIZE=256
 
+CXXFLAGS = $(CFLAGS) -fno-exceptions
 
 # keep every function in separate section. This will allow linker to dump unused functions
 LDFLAGS += -Xlinker -Map=$(TARGET).map
@@ -157,6 +161,10 @@ C_SOURCE_FILE_NAMES = $(notdir $(C_SOURCE_FILES))
 C_PATHS				= $(call remduplicates, $(dir $(C_SOURCE_FILES) ) )
 C_OBJECTS			= $(C_SOURCE_FILE_NAMES:.c=.o)
 
+CXX_SOURCE_FILE_NAMES	= $(notdir $(CXX_SOURCE_FILES))
+CXX_PATHS				= $(call remduplicates, $(dir $(CXX_SOURCE_FILES) ) )
+CXX_OBJECTS				= $(CXX_SOURCE_FILE_NAMES:.cxx=.o)
+
 ASM_SOURCE_FILE_NAMES = $(notdir $(ASM_SOURCE_FILES))
 ASM_PATHS			  = $(call remduplicates, $(dir $(ASM_SOURCE_FILES) ))
 ASM_OBJECTS			  = $(ASM_SOURCE_FILE_NAMES:.s=.o)
@@ -166,11 +174,14 @@ ASM2_PATHS			  = $(call remduplicates, $(dir $(ASM2_SOURCE_FILES) ))
 ASM2_OBJECTS			  = $(ASM2_SOURCE_FILE_NAMES:.S=.o)
 
 vpath %.c $(C_PATHS)
+vpath %.cxx $(CXX_PATHS)
 vpath %.s $(ASM_PATHS)
 vpath %.S $(ASM2_PATHS)
 
-OBJECTS = $(C_OBJECTS) $(ASM_OBJECTS) $(ASM2_OBJECTS)
+OBJECTS = $(C_OBJECTS) $(CXX_OBJECTS) $(ASM_OBJECTS) $(ASM2_OBJECTS)
 
+
+.SUFFIXES: .cxx
 
 #building all targets
 all: $(TARGET_BIN) $(TARGET_HEX)
@@ -178,6 +189,10 @@ all: $(TARGET_BIN) $(TARGET_HEX)
 # Create objects from C SRC files
 .c.o:
 	$(CC) $(CFLAGS) $(INC_PATHS) -c $<
+
+# Create objects from C++ SRC files
+.cxx.o:
+	$(CXX) $(CXXFLAGS) $(INC_PATHS) -c $<
 
 # Assemble files
 .s.o:
