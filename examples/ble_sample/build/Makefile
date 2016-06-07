@@ -147,7 +147,7 @@ LDFLAGS += -mcpu=cortex-m0
 # let linker to dump unused sections
 LDFLAGS += -Wl,--gc-sections
 # use newlib in nano version
-LDFLAGS += --specs=nano.specs -lc -lnosys -g
+LDFLAGS += --specs=nano.specs -nostdlib -g
 
 # Assembler flags
 ASMFLAGS += -x assembler-with-cpp -g
