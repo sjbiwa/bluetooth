@@ -72,9 +72,12 @@ static void task1(void* arg0, void* arg1)
 /* BLEモジュールからの通知データを処理するタスク */
 static void task2(void* arg0, void* arg1)
 {
+	uint32_t pattern = 0;
     for (;;) {
     	Message msg;
     	if ( msgq_recv(msgq_id, &msg, sizeof(msg)) == RT_OK ) {
+    		led_output(pattern);
+    		pattern++;
     		mutex_lock(mutex_request);
     		request_msg = msg;
     		mutex_unlock(mutex_request);

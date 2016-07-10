@@ -5,3 +5,10 @@
 *.hex
 examples/ble_sample/build/mdk/
 examples/ble_sample/build/ExtDll.iex
+examples/versawriter/build/ExtDll.iex
+examples/versawriter/build/mdk/JLinkLog.txt
+examples/versawriter/build/mdk/JLinkSettings.ini
+examples/versawriter/build/mdk/ble_sample.uvguix.biwa
+examples/versawriter/build/mdk/ble_sample.uvoptx
+examples/versawriter/build/mdk/ble_sample.uvprojx
+examples/versawriter/build/mdk/debug.ini

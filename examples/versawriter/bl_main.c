@@ -7,7 +7,7 @@
 #include "ble_advdata.h"
 #include "softdevice_handler.h"
 //#include "app_gpiote.h"
-#include "ble_nus.h"
+#include "ble_vws.h"
 #include "app_util_platform.h"
 #include "bwos.h"
 
@@ -15,10 +15,11 @@
 
 #define WAKEUP_BUTTON_ID                0                                           /**< Button used to wake up the application. */
 
-#define DEVICE_NAME                     "Versa Writer(with RTOS)"                        /**< Name of device. Will be included in the advertising data. */
+//#define DEVICE_NAME                     "Versa Writer(with RTOS) V2"                        /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                     "Versa Writer V2"                        /**< Name of device. Will be included in the advertising data. */
 
 #define APP_ADV_INTERVAL                1600                                      /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
-#define APP_ADV_TIMEOUT_IN_SECONDS      180                                      /**< The advertising timeout (in units of seconds). */
+#define APP_ADV_TIMEOUT_IN_SECONDS      5                                      /**< The advertising timeout (in units of seconds). */
 
 #define APP_GPIOTE_MAX_USERS            1                                           /**< Maximum number of simultaneously GPIOTE users. */
 
@@ -40,11 +41,13 @@
 #define DEAD_BEEF                       0xDEADBEEF                                  /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
 
 static ble_gap_sec_params_t             m_sec_params;                               /**< Security requirements for this application. */
-static ble_nus_t                        m_nus;                                      /**< Structure to identify the Nordic UART Service. */
 static uint16_t                         m_conn_handle = BLE_CONN_HANDLE_INVALID;    /**< Handle of the current connection. */
 
+static BleVwsInfo                       m_vws;
 
 static int	timeout_flag;
+
+static uint8_t manuf_data[] = {"SAMPLE"};
 
 /**@brief Function for assert macro callback.
  *
@@ -102,15 +105,22 @@ static void advertising_init(void)
 {
     uint32_t      err_code;
     ble_advdata_t advdata;
+    ble_advdata_manuf_data_t manufdata;
     ble_advdata_t scanrsp;
+
     uint8_t       flags = BLE_GAP_ADV_FLAGS_LE_ONLY_LIMITED_DISC_MODE;
 
-    ble_uuid_t adv_uuids[] = {{BLE_UUID_NUS_SERVICE, m_nus.uuid_type}};
+    ble_uuid_t adv_uuids[] = {{VWS_UUID_SERVICE, m_vws.uuid_type}};
 
     memset(&advdata, 0, sizeof(advdata));
     advdata.name_type               = BLE_ADVDATA_FULL_NAME;
     advdata.include_appearance      = false;
     advdata.flags                   = flags;
+
+    manufdata.company_identifier = 0xF0F0;
+    manufdata.data.p_data = manuf_data;
+    manufdata.data.size = sizeof(manuf_data);
+    advdata.p_manuf_specific_data = &manufdata;
 
     memset(&scanrsp, 0, sizeof(scanrsp));
     scanrsp.uuids_complete.uuid_cnt = sizeof(adv_uuids) / sizeof(adv_uuids[0]);
@@ -131,12 +141,11 @@ static void advertising_init(void)
  * @param[in] length   Length of the data.
  */
 /**@snippet [Handling the data received over BLE] */
-static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t length)
+void vws_callback(const BleVwsInfo* info, const uint8_t* data, uint32_t length)
 {
 extern void notify_uart(uint8_t*, uint16_t);
-	notify_uart(p_data, length);
+	notify_uart(data, length);
 }
-/**@snippet [Handling the data received over BLE] */
 
 
 /**@brief Function for initializing services that will be used by the application.
@@ -144,13 +153,8 @@ extern void notify_uart(uint8_t*, uint16_t);
 static void services_init(void)
 {
     uint32_t         err_code;
-    ble_nus_init_t   nus_init;
 
-    memset(&nus_init, 0, sizeof(nus_init));
-
-    nus_init.data_handler = nus_data_handler;
-
-    err_code = ble_nus_init(&m_nus, &nus_init);
+    err_code = ble_vws_init(&m_vws, vws_callback);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -265,9 +269,9 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
  *
  * @param[in]   p_ble_evt   S110 SoftDevice event.
  */
-void ble_evt_dispatch(ble_evt_t * p_ble_evt)
+static void ble_evt_dispatch(ble_evt_t * p_ble_evt)
 {
-    ble_nus_on_ble_evt(&m_nus, p_ble_evt);
+	ble_vws_on_ble_evt(&m_vws, p_ble_evt);
     on_ble_evt(p_ble_evt);
 }
 

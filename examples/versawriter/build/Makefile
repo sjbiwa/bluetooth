@@ -1,8 +1,8 @@
 #
-# Makefile for Bluetooth LE sample program for nRF51822
+# Makefile for Bluetooth LE VersaWriter program for nRF51822
 #
 
-PROJECT_NAME := ble_sample
+PROJECT_NAME := versawriter
 
 TARGET := $(PROJECT_NAME)
 TARGET_ELF := $(TARGET).elf
@@ -60,6 +60,7 @@ C_SOURCE_FILES += \
 			$(NRK51_SDK_ROOT)/components/toolchain/system_nrf51.c \
 			$(NRK51_SDK_ROOT)/components/softdevice/common/softdevice_handler/softdevice_handler.c \
 			../bl_main.c \
+			../ble_vws.c \
 			../board_rtc.c \
 			../idle.c \
 			$(OS_KERN_SRC)/fixmb.c \
@@ -88,7 +89,7 @@ ASM_SOURCE_FILES  += $(NRK51_SDK_ROOT)/components/toolchain/gcc/gcc_startup_nrf5
 ASM2_SOURCE_FILES  += $(OS_BSP_SRC)/dispatch.S ../handler.S
 
 #linker script
-LINKER_SCRIPT = ble_sample.ld
+LINKER_SCRIPT = versawriter.ld
 
 #INC_PATHS += -I$(NRK51_SDK_ROOT)/components/libraries/gpiote
 #includes common to all targets
